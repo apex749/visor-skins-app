@@ -1,0 +1,17 @@
+VISOR DE SKINS GTA SA - proyecto Android (APK)
+
+Como obtener el APK sin instalar nada en tu laptop (GitHub compila por ti, gratis):
+
+1. Crea una cuenta en github.com y un repositorio nuevo (por ejemplo "visor-skins"), privado o publico.
+2. Descomprime este zip. Sube TODO su contenido al repositorio:
+   en el repositorio toca "Add file" > "Upload files" y arrastra las carpetas y archivos.
+   IMPORTANTE: debe subirse tambien la carpeta oculta ".github" (con workflows/build-apk.yml).
+   Si tu sistema no la sube, crea el archivo a mano: "Add file" > "Create new file",
+   nombre ".github/workflows/build-apk.yml" y pega el contenido de ese archivo.
+3. Ve a la pestana "Actions". Si no empieza solo, entra en "Build APK" y toca "Run workflow".
+4. Cuando termine (3 a 6 minutos) abre la ejecucion y descarga "visor-skins-apk" (es un zip con app-debug.apk).
+5. Pasa el APK al celular, abrelo y permite "instalar apps de origen desconocido".
+
+Requisitos del celular: Android 10 o superior.
+El render PNG se guarda en Imagenes/VisorSkins.
+El boton Carpeta usa el selector nativo de Android.

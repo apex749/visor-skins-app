@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Visor de skins GTA SA</title>
+<style>
+:root{--bg:#1c1f24;--ink:#ece6d8;--sand:#d8b26e;--line:#3a4049;--panel:#252a31}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,sans-serif;overscroll-behavior:none}
+body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header,footer{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--panel)}
+h1{font-size:16px;margin:0;flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header button{padding:8px 10px}
+button{font:inherit;color:var(--ink);background:none;border:1px solid var(--sand);border-radius:6px;padding:8px 12px}
+button:active{background:var(--sand);color:#1c1f24}
+main{flex:1;position:relative;min-height:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#msg{position:absolute;left:12px;right:12px;top:10px;pointer-events:none;color:var(--sand);text-shadow:0 1px 2px #000}
+#nm{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sheet{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:5}
+#sheet.on{display:flex}
+#q{flex:1;min-width:0;margin:0;padding:10px;font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+#ul{flex:1;overflow:auto;margin:0;padding:0;list-style:none}
+#ul li{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line)}
+#ul li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 0}
+#ul li button{padding:4px 10px;font-size:13px}
+#ul li.cur{color:var(--sand)}
+#logp{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:6;padding:8px;gap:8px;box-sizing:border-box}
+#logp.on{display:flex}
+#logp div{display:flex;gap:8px}
+#lt{flex:1;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:12px/1.4 monospace;padding:8px;resize:none}
+#sh{display:flex;gap:8px;margin:10px}
+#fab{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:8px}
+#fab button{background:rgba(37,42,49,.85)}
+#anp{position:absolute;left:0;right:0;bottom:0;max-height:42%;display:none;flex-direction:column;background:rgba(28,31,36,.96);z-index:4;border-top:1px solid var(--line)}
+#anp.on{display:flex}
+#ah{display:flex;gap:6px;padding:8px;flex-wrap:wrap}
+#ah button{padding:6px 10px;font-size:13px}
+#al{margin:0;padding:0;list-style:none;overflow:auto}
+#al li{padding:10px 14px;border-top:1px solid var(--line)}
+#al li.cur{color:var(--sand)}
+#wpn{position:absolute;left:0;right:0;bottom:0;display:none;flex-direction:column;background:rgba(28,31,36,.96);z-index:4;border-top:1px solid var(--line)}
+#wpn.on{display:flex}
+#wh{display:flex;gap:6px;padding:8px;flex-wrap:wrap}
+#wh button{padding:6px 10px;font-size:13px}
+#wg{padding:0 10px 8px}
+#wg div{display:flex;align-items:center;gap:10px;padding:3px 0}
+#wg span{min-width:56px}
+#wg b{min-width:60px;text-align:center;font-weight:400}
+#wg button{padding:4px 16px}
+#aa{display:flex;gap:12px;padding:0 10px 8px;flex-wrap:wrap}
+#aa label{display:flex;align-items:center;gap:6px;font-size:13px}
+#aa input{width:110px}
+#fm{display:none;flex-direction:column;gap:8px}
+#fm.on{display:flex}
+#fab{align-items:stretch}
+</style></head><body>
+<header><h1>Visor de skins</h1><button id="bf">Archivos</button><button id="bd">Carpeta</button><button id="bg">Log</button></header>
+<main><canvas id="c"></canvas><div id="fab"><div id="fm"><button id="bc">Centrar</button><button id="br">Render</button><button id="bf2">Fondo render: transparente</button><button id="bi">IFP</button><button id="bz" style="display:none">Pose base</button><button id="bw">Arma</button></div><button id="bt">Menú</button></div>
+<div id="wpn"><div id="wh"><button id="wo">Otra arma</button><button id="wq">Quitar</button><button id="wr">Reiniciar</button><button id="wb">Mano: der</button><button id="wp">Paso x1</button><button id="wx">Cerrar</button></div><div id="wg"></div></div>
+<div id="anp"><div id="ah"><button id="ap">Pausar</button><button id="ac">Giro: normal</button><button id="ao">Otro IFP</button><button id="ax">Cerrar</button></div><div id="aa"><label>Apuntar izq/der <input id="ay" type="range" min="-60" max="60" value="0"></label><label>Arriba/abajo <input id="ap2" type="range" min="-60" max="60" value="0"></label></div><ul id="al"></ul></div><div id="msg">Toca Archivos y elige uno o varios .dff junto con sus .txd, o una carpeta entera.</div>
+<div id="logp"><textarea id="lt" readonly></textarea><div><button id="lc">Copiar</button><button id="lx">Cerrar</button></div></div>
+<div id="sheet"><div id="sh"><input id="q" placeholder="Buscar skin" autocomplete="off"><button id="qc">Vaciar</button></div><ul id="ul"></ul></div></main>
+<footer><span id="nm"></span><button id="pv">Anterior</button><button id="nx">Siguiente</button><button id="bl">Lista</button></footer>
+<input id="fi" type="file" multiple hidden><input id="ii" type="file" hidden><input id="wi" type="file" multiple hidden><input id="di" type="file" webkitdirectory multiple hidden>
+<script>
+const $=s=>document.querySelector(s),cv=$('#c'),msg=t=>$('#msg').textContent=t||'';
+const gl=cv.getContext('webgl2',{antialias:true})||cv.getContext('webgl',{antialias:true});
+const W2=typeof WebGL2RenderingContext!=='undefined'&&gl instanceof WebGL2RenderingContext;
+const u32=gl.getExtension('OES_element_index_uint');
+const LOG=[];function log(t){LOG.push(t);const e=$('#lt');if(e)e.value=LOG.join('\n')}
+/* ---------- RenderWare ---------- */
+function chunks(dv,o,e){const a=[];while(o+12<=e){const s=dv.getUint32(o+4,true);a.push({type:dv.getUint32(o,true),start:o+12,end:Math.min(o+12+s,e)});o+=12+s}return a}
+function str(dv,s,e){let r='';for(let i=s;i<e;i++){const b=dv.getUint8(i);if(!b)break;r+=String.fromCharCode(b)}return r}
+function f32(dv,o,n){const a=new Float32Array(n);for(let i=0;i<n;i++)a[i]=dv.getFloat32(o+i*4,true);return a}
+function parseDFF(buf){
+  const dv=new DataView(buf),root=chunks(dv,0,buf.byteLength).find(c=>c.type==0x10);
+  if(!root)throw Error('No parece un DFF');
+  const gl_=chunks(dv,root.start,root.end).find(c=>c.type==0x1A);
+  if(!gl_)throw Error('El DFF no tiene geometría');
+  const geos=chunks(dv,gl_.start,gl_.end).filter(c=>c.type==0xF).map(g=>parseGeo(dv,g));
+  const fc=chunks(dv,root.start,root.end).find(c=>c.type==0x0E);
+  geos.frames=fc?parseFrames(dv,fc):[];
+  geos.atomics=chunks(dv,root.start,root.end).filter(c=>c.type==0x14).map(a=>{const q=chunks(dv,a.start,a.end)[0].start;return{f:dv.getUint32(q,true),g:dv.getUint32(q+4,true)}});
+  return geos;
+}
+function parseGeo(dv,g){
+  const ch=chunks(dv,g.start,g.end);let o=ch[0].start;
+  const fl=dv.getUint32(o,true),nt=dv.getUint32(o+4,true),nv=dv.getUint32(o+8,true);o+=16;
+  if(fl&8)o+=nv*4;
+  let ns=(fl>>16)&255;if(!ns)ns=(fl&4)?1:(fl&0x80)?2:0;
+  let uv=new Float32Array(nv*2);
+  for(let i=0;i<ns;i++){if(!i)uv=f32(dv,o,nv*2);o+=nv*8}
+  const tris=[];
+  for(let i=0;i<nt;i++){const b=o+i*8;tris.push([dv.getUint16(b+2,true),dv.getUint16(b,true),dv.getUint16(b+6,true),dv.getUint16(b+4,true)])}
+  o+=nt*8;
+  const hv=dv.getUint32(o+16,true),hn=dv.getUint32(o+20,true);o+=24;
+  let pos=new Float32Array(nv*3),nrm=null;
+  if(hv){pos=f32(dv,o,nv*3);o+=nv*12}
+  if(hn)nrm=f32(dv,o,nv*3);
+  const mats=[],ml=ch.find(c=>c.type==8);
+  if(ml)for(const m of chunks(dv,ml.start,ml.end).filter(c=>c.type==7)){
+    const mc=chunks(dv,m.start,m.end),s=mc[0].start;
+    const col=[4,5,6,7].map(k=>dv.getUint8(s+k)/255);
+    let tex=null;const tc=mc.find(c=>c.type==6);
+    if(tc){const sc=chunks(dv,tc.start,tc.end).find(c=>c.type==2);if(sc)tex=str(dv,sc.start,sc.end).toLowerCase()}
+    mats.push({col,tex});
+  }
+  const groups=new Map();
+  let drop=0;
+  const add=(m,a,b,c)=>{if(a>=nv||b>=nv||c>=nv){drop++;return}if(a==b||b==c||a==c)return;let l=groups.get(m);if(!l)groups.set(m,l=[]);l.push(a,b,c)};
+  const ex=ch.find(c=>c.type==3),bm=ex&&chunks(dv,ex.start,ex.end).find(c=>c.type==0x50E);
+  let skin=null;const sp=ex&&chunks(dv,ex.start,ex.end).find(c=>c.type==0x116);
+  if(sp){
+    let q=sp.start;const nb=dv.getUint8(q),nu=dv.getUint8(q+1);q+=4+nu;
+    const bi=new Float32Array(nv*4),bw=new Float32Array(nv*4);
+    for(let i=0;i<nv*4;i++)bi[i]=dv.getUint8(q+i);q+=nv*4;
+    for(let i=0;i<nv*4;i++)bw[i]=dv.getFloat32(q+i*4,true);q+=nv*16;
+    const inv=[],raw=[];for(let b=0;b<nb;b++){const m=f32(dv,q,16);if(b<2)raw.push(Array.from(m).map(v=>+v.toFixed(3)));m[3]=m[7]=m[11]=0;m[15]=1;inv.push(m);q+=64}
+    skin={nb,bi,bw,inv,raw,size:sp.end-sp.start,exp:4+nu+nv*20+nb*64};
+  }
+  if(bm){
+    const strip=dv.getUint32(bm.start,true),nm=dv.getUint32(bm.start+4,true);let q=bm.start+12;
+    for(let i=0;i<nm;i++){
+      const ni=dv.getUint32(q,true),mi=dv.getUint32(q+4,true);q+=8;
+      const ix=[];for(let k=0;k<ni;k++)ix.push(dv.getUint32(q+k*4,true));q+=ni*4;
+      if(strip)for(let k=0;k+2<ni;k++)k&1?add(mi,ix[k+1],ix[k],ix[k+2]):add(mi,ix[k],ix[k+1],ix[k+2]);
+      else for(let k=0;k+2<ni;k+=3)add(mi,ix[k],ix[k+1],ix[k+2]);
+    }
+  }else for(const t of tris)add(t[3],t[0],t[1],t[2]);
+  if(!nrm){
+    nrm=new Float32Array(nv*3);
+    for(const idx of groups.values())for(let i=0;i<idx.length;i+=3){
+      const [a,b,c]=[idx[i]*3,idx[i+1]*3,idx[i+2]*3],u=[0,1,2].map(k=>pos[b+k]-pos[a+k]),v=[0,1,2].map(k=>pos[c+k]-pos[a+k]);
+      const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+      for(const p of [a,b,c])for(let k=0;k<3;k++)nrm[p+k]+=n[k];
+    }
+  }
+  return {nv,pos,nrm,uv,mats,groups,fl,nt,drop,bm:!!bm,hasN:hn,ns,skin};
+}
+function parseFrames(dv,fc){
+  const ch=chunks(dv,fc.start,fc.end),n=dv.getUint32(ch[0].start,true),F=[];
+  for(let i=0;i<n;i++){
+    const o=ch[0].start+4+i*56,m=f32(dv,o,12);
+    F.push({m:new Float32Array([m[0],m[1],m[2],0,m[3],m[4],m[5],0,m[6],m[7],m[8],0,m[9],m[10],m[11],1]),par:dv.getInt32(o+48,true),id:-1,name:'',hier:null});
+  }
+  ch.slice(1).filter(c=>c.type==3).forEach((e,i)=>{
+    if(!F[i])return;
+    for(const x of chunks(dv,e.start,e.end)){
+      if(x.type==0x253F2FE)F[i].name=str(dv,x.start,x.end);
+      else if(x.type==0x11E){
+        const cnt=dv.getUint32(x.start+8,true);F[i].id=dv.getInt32(x.start+4,true);
+        if(cnt){const nd=[];let q=x.start+20;for(let k=0;k<cnt;k++){nd.push(dv.getInt32(q,true));q+=12}F[i].hier=nd}
+      }
+    }
+  });
+  return F;
+}
+function parseIFP(buf){
+  const dv=new DataView(buf),mg=str(dv,0,4);
+  if(mg!='ANP3')throw Error('formato '+mg+' no soportado (por ahora solo ANP3)');
+  const na=dv.getUint32(32,true),out=[];let o=36;
+  for(let a=0;a<na;a++){
+    const name=str(dv,o,o+24),nn=dv.getUint32(o+24,true),tracks=new Map();let p=o+36,dur=0;
+    for(let n=0;n<nn;n++){
+      const ft=dv.getUint32(p+24,true),nf=dv.getUint32(p+28,true),id=dv.getInt32(p+32,true);p+=36;
+      const fs=ft==4?16:10,T=new Float32Array(nf),Q=new Float32Array(nf*4),P=ft==4?new Float32Array(nf*3):null;
+      for(let k=0;k<nf;k++){
+        const q=p+k*fs;
+        for(let c=0;c<4;c++)Q[k*4+c]=dv.getInt16(q+c*2,true)/4096;
+        T[k]=dv.getUint16(q+8,true)/60;
+        if(P)for(let c=0;c<3;c++)P[k*3+c]=dv.getInt16(q+10+c*2,true)/1024;
+      }
+      p+=nf*fs;if(nf&&T[nf-1]>dur)dur=T[nf-1];
+      tracks.set(id,{t:T,q:Q,p:P});
+    }
+    out.push({name,dur,tracks});o=p;
+  }
+  return out;
+}
+function dxt(d,w,h,k){
+  const out=new Uint8Array(w*h*4),bs=k==1?8:16,c5=v=>[(v>>11&31)*255/31|0,(v>>5&63)*255/63|0,(v&31)*255/31|0];
+  let p=0;
+  for(let by=0;by<h;by+=4)for(let bx=0;bx<w;bx+=4,p+=bs){
+    const q=k==1?p:p+8,c0=d[q]|d[q+1]<<8,c1=d[q+2]|d[q+3]<<8,a=c5(c0),b=c5(c1),pal=[a,b],four=c0>c1||k!=1;
+    if(four)pal.push(a.map((v,i)=>(2*v+b[i])/3|0),a.map((v,i)=>(v+2*b[i])/3|0));else pal.push(a.map((v,i)=>(v+b[i])/2|0),[0,0,0]);
+    const bits=(d[q+4]|d[q+5]<<8|d[q+6]<<16|d[q+7]<<24)>>>0;
+    for(let i=0;i<16;i++){
+      const x=bx+(i&3),y=by+(i>>2);if(x>=w||y>=h)continue;
+      const ix=bits>>>(2*i)&3,c=pal[ix],o=(y*w+x)*4;let al=255;
+      if(k==1)al=(!four&&ix==3)?0:255;
+      else if(k==3)al=((d[p+(i>>1)]>>((i&1)*4))&15)*17;
+      else{const a0=d[p],a1=d[p+1],bp=3*i,bi=p+2+(bp>>3),e=((d[bi]|d[bi+1]<<8)>>(bp&7))&7;
+        al=e==0?a0:e==1?a1:a0>a1?((8-e)*a0+(e-1)*a1)/7:e<6?((6-e)*a0+(e-1)*a1)/5:e==6?0:255}
+      out[o]=c[0];out[o+1]=c[1];out[o+2]=c[2];out[o+3]=al;
+    }
+  }
+  return out;
+}
+function parseTXD(buf,only){
+  const dv=new DataView(buf),map={},root=chunks(dv,0,buf.byteLength).find(c=>c.type==0x16);
+  if(!root)throw Error('No parece un TXD');
+  for(const c of chunks(dv,root.start,root.end).filter(c=>c.type==0x15)){
+    try{
+      const o=chunks(dv,c.start,c.end)[0].start,name=str(dv,o+8,o+40).toLowerCase();
+      if(only&&!only.has(name))continue;
+      const rf=dv.getUint32(o+72,true),d3=dv.getUint32(o+76,true),w=dv.getUint16(o+80,true),h=dv.getUint16(o+82,true),dep=dv.getUint8(o+84),cp=dv.getUint8(o+87),plat=dv.getUint32(o,true),nl=dv.getUint8(o+85);
+      let p=o+88,pal=null;
+      if(rf&0x2000){pal=new Uint8Array(buf,p,1024);p+=1024}else if(rf&0x4000){pal=new Uint8Array(buf,p,64);p+=64}
+      const sz=dv.getUint32(p,true);p+=4;const d=new Uint8Array(buf,p,sz);
+      let rgba,fb=0;
+      const fc={0x31545844:1,0x33545844:3,0x35545844:5};
+      const k=plat==8?({1:1,3:3,5:5}[cp]||0):(fc[d3]||0);
+      if(k){rgba=dxt(d,w,h,k);if(k==1&&plat==9&&!(cp&1))for(let i=3;i<rgba.length;i+=4)rgba[i]=255}
+      else{
+        rgba=new Uint8Array(w*h*4);const f=rf&0xF00;
+        for(let i=0;i<w*h;i++){
+          let r,g,b,a=255;
+          if(pal){const ix=(rf&0x2000)?d[i]:((i&1)?d[i>>1]>>4:d[i>>1]&15),j=ix*4;r=pal[j];g=pal[j+1];b=pal[j+2];a=pal[j+3]}
+          else if(dep==32){b=d[i*4];g=d[i*4+1];r=d[i*4+2];a=f==0x600?255:d[i*4+3]}
+          else if(dep==16){const v=d[i*2]|d[i*2+1]<<8;
+            if(f==0x200){r=(v>>11&31)*8;g=(v>>5&63)*4;b=(v&31)*8}
+            else if(f==0x300){a=(v>>12&15)*17;r=(v>>8&15)*17;g=(v>>4&15)*17;b=(v&15)*17}
+            else{a=v&0x8000?255:0;r=(v>>10&31)*8;g=(v>>5&31)*8;b=(v&31)*8}}
+          else{r=g=b=160;fb=1}
+          rgba.set([r,g,b,a],i*4);
+        }
+      }
+      log('TXD '+name+' '+w+'x'+h+' plat='+plat+' rf=0x'+rf.toString(16)+' d3='+d3+' prof='+dep+' cp='+cp+' niveles='+nl+' bytes='+sz+' -> '+(k?'DXT'+k:pal?'paleta':dep+'bit')+(fb?' FALLBACK GRIS':''));
+      map[name]={w,h,rgba};
+    }catch(e){log('TXD ERROR en una textura: '+e.message)}
+  }
+  return map;
+}
+/* ---------- WebGL ---------- */
+let SHLOG='';
+const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))SHLOG+=gl.getShaderInfoLog(o)+' ';return o};
+const pr=gl.createProgram();
+gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec3 p,n;attribute vec2 t;attribute vec4 bi,bw;uniform mat4 mvp;uniform mat3 nm;uniform mat4 bones[48];uniform float sk;varying vec3 vn;varying vec2 vt;void main(){vec4 pp=vec4(p,1.);vec3 nn=n;if(sk>.5&&bw.x+bw.y+bw.z+bw.w>.01){mat4 m=bones[int(bi.x+.5)]*bw.x+bones[int(bi.y+.5)]*bw.y+bones[int(bi.z+.5)]*bw.z+bones[int(bi.w+.5)]*bw.w;pp=m*pp;nn=mat3(m)*n;}vn=nm*nn;vt=t;gl_Position=mvp*pp;}'));
+gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,'precision mediump float;uniform sampler2D s;uniform vec4 col;uniform float ht;varying vec3 vn;varying vec2 vt;void main(){vec4 c=ht>.5?texture2D(s,vt):vec4(.72,.72,.72,1.);c.rgb*=col.rgb;if(c.a<.1)discard;float l=.55+.5*abs(dot(normalize(vn),normalize(vec3(.4,.5,.8))));gl_FragColor=vec4(c.rgb*l,1.);}'));
+gl.bindAttribLocation(pr,0,'p');gl.bindAttribLocation(pr,1,'n');gl.bindAttribLocation(pr,2,'t');gl.bindAttribLocation(pr,3,'bi');gl.bindAttribLocation(pr,4,'bw');
+gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))SHLOG+=gl.getProgramInfoLog(pr);gl.useProgram(pr);
+const U=n=>gl.getUniformLocation(pr,n);
+gl.enable(gl.DEPTH_TEST);
+let scene=[],res=[],tx=[];
+function free(){res.forEach(b=>gl.deleteBuffer(b));tx.forEach(t=>gl.deleteTexture(t));scene=[];res=[];tx=[]}
+const pow2=v=>(v&(v-1))==0;
+function mkTex(t,L){
+  if(t._g)return t._g;
+  const o=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,o);
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,t.w,t.h,0,gl.RGBA,gl.UNSIGNED_BYTE,t.rgba);
+  const p=W2||(pow2(t.w)&&pow2(t.h));
+  if(p)gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,p?gl.LINEAR_MIPMAP_LINEAR:gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  const wr=p?gl.REPEAT:gl.CLAMP_TO_EDGE;
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wr);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wr);
+  (L||tx).push(o);return t._g=o;
+}
+let Rm,dist,px,py,ctr=[0,0,0],rad=1;
+function reset(){Rm=mul(Rx(.1),mul(Ry(Math.PI),Rx(-Math.PI/2)));dist=rad*2.6;px=py=0;draw()}
+function upload(geos,txd){
+  free();const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  for(const g of geos){
+    for(let i=0;i<g.nv;i++)for(let k=0;k<3;k++){const v=g.pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v}
+    log('GEO '+geos.indexOf(g)+': verts='+g.nv+' tris='+g.nt+' flags=0x'+g.fl.toString(16)+' uvsets='+g.ns+' binmesh='+g.bm+' normales='+(g.hasN?'si':'calculadas')+' descartados='+g.drop+' materiales='+g.mats.length);
+    const mk=(t,d)=>{const b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,d,gl.STATIC_DRAW);res.push(b);return b};
+    const big=g.nv>65535&&u32,o={pb:mk(gl.ARRAY_BUFFER,g.pos),nb:mk(gl.ARRAY_BUFFER,g.nrm),tb:mk(gl.ARRAY_BUFFER,g.uv),parts:[],big};
+    if(g.skin){o.sk=true;o.bib=mk(gl.ARRAY_BUFFER,g.skin.bi);o.bwb=mk(gl.ARRAY_BUFFER,g.skin.bw)}
+    for(const [m,idx] of g.groups){
+      const mat=g.mats[m]||{},t=mat.tex&&txd[mat.tex];
+      let u0=1e9,u1=-1e9,v0=1e9,v1=-1e9;for(const ix of idx){const u=g.uv[ix*2],v=g.uv[ix*2+1];if(u<u0)u0=u;if(u>u1)u1=u;if(v<v0)v0=v;if(v>v1)v1=v}
+      log('  mat '+m+(g.mats[m]?'':' (SIN DEFINIR)')+' tex='+(mat.tex||'ninguna')+(mat.tex&&!t?' NO ESTA EN EL TXD':'')+' tris='+idx.length/3+' uv=['+u0.toFixed(2)+'..'+u1.toFixed(2)+', '+v0.toFixed(2)+'..'+v1.toFixed(2)+']');
+      o.parts.push({ib:mk(gl.ELEMENT_ARRAY_BUFFER,big?new Uint32Array(idx):new Uint16Array(idx)),n:idx.length,col:mat.col||[1,1,1,1],tex:t?mkTex(t):null});
+    }
+    scene.push(o);
+  }
+  ctr=mn.map((v,i)=>(v+mx[i])/2);log('bbox min='+mn.map(v=>v.toFixed(2))+' max='+mx.map(v=>v.toFixed(2)));rad=Math.max(.01,Math.hypot(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2])/2);reset();
+}
+const mul=(a,b)=>{const o=new Float32Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s}return o};
+const T=(x,y,z)=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1]);
+const Rx=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1])};
+const Ry=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1])};
+const Rz=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1])};
+const FOV=.8;let RS=1,TR=false,RGRIS=false;
+function renderScene(){
+  const dpr=devicePixelRatio||1,w=Math.round(cv.clientWidth*dpr*RS),h=Math.round(cv.clientHeight*dpr*RS);
+  if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h}
+  gl.viewport(0,0,w,h);TR?(RGRIS?gl.clearColor(.2196,.2196,.2196,1):gl.clearColor(0,0,0,0)):gl.clearColor(.11,.12,.14,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  if(!scene.length)return;
+  const n=rad*.02,f=dist+rad*20,t=1/Math.tan(FOV/2),a=w/h;
+  const P=new Float32Array([t/a,0,0,0,0,t,0,0,0,0,(f+n)/(n-f),-1,0,0,2*f*n/(n-f),0]);
+  const R=Rm;
+  const V=mul(T(px,py,-dist),mul(R,T(-ctr[0],-ctr[1],-ctr[2])));
+  const PV=mul(P,V);gPV=PV;gR=R;gl.uniformMatrix4fv(U('mvp'),false,PV);
+  gl.uniformMatrix3fv(U('nm'),false,new Float32Array([R[0],R[1],R[2],R[4],R[5],R[6],R[8],R[9],R[10]]));
+  gl.uniform1i(U('s'),0);
+  if(skel&&skel.ok&&anim){pose();gl.uniformMatrix4fv(U('bones'),false,bonesArr)}
+  for(const o of scene){
+    gl.bindBuffer(gl.ARRAY_BUFFER,o.pb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,o.nb);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,o.tb);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
+    if(o.sk&&skel&&skel.ok&&anim){gl.uniform1f(U('sk'),1);gl.bindBuffer(gl.ARRAY_BUFFER,o.bib);gl.enableVertexAttribArray(3);gl.vertexAttribPointer(3,4,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,o.bwb);gl.enableVertexAttribArray(4);gl.vertexAttribPointer(4,4,gl.FLOAT,false,0,0)}else{gl.uniform1f(U('sk'),0);gl.disableVertexAttribArray(3);gl.disableVertexAttribArray(4)}
+    for(const p of o.parts){
+      gl.uniform4fv(U('col'),p.col);gl.uniform1f(U('ht'),p.tex?1:0);
+      if(p.tex)gl.bindTexture(gl.TEXTURE_2D,p.tex);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,p.ib);gl.drawElements(gl.TRIANGLES,p.n,o.big?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,0);
+    }
+  }
+}
+let raf=0;function draw(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;render()})}
+addEventListener('resize',draw);
+/* ---------- gestos ---------- */
+const ptr=new Map();let prev=null;
+function snap(){const p=[...ptr.values()];if(p.length==1)return{c:p[0],d:0,n:1};if(p.length>1){const[a,b]=p;return{c:[(a[0]+b[0])/2,(a[1]+b[1])/2],d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,a:Math.atan2(b[1]-a[1],b[0]-a[0]),n:2}}return null}
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);prev=snap()};
+cv.onpointermove=e=>{
+  if(!ptr.has(e.pointerId))return;ptr.set(e.pointerId,[e.clientX,e.clientY]);const s=snap();
+  if(prev&&prev.n==s.n){
+    const dx=s.c[0]-prev.c[0],dy=s.c[1]-prev.c[1];
+    if(s.n==1){Rm=mul(Rx(dy*.01),mul(Ry(dx*.01),Rm))}
+    else{let da=s.a-prev.a;if(da>Math.PI)da-=2*Math.PI;if(da<-Math.PI)da+=2*Math.PI;Rm=mul(Rz(-da),Rm);dist=Math.max(rad*.2,Math.min(rad*15,dist*prev.d/s.d));const k=2*Math.tan(FOV/2)*dist/cv.clientHeight;px+=dx*k;py-=dy*k}
+  }
+  prev=s;draw();
+};
+cv.onpointerup=cv.onpointercancel=e=>{ptr.delete(e.pointerId);prev=snap()};
+cv.onwheel=e=>{e.preventDefault();dist=Math.max(rad*.2,Math.min(rad*15,dist*Math.exp(e.deltaY*.001)));draw()};
+/* ---------- lista y carga ---------- */
+const items=[],txds=new Map();let cur=-1,seq=0,batch=0;
+const dirOf=f=>(f.webkitRelativePath||'').replace(/[^/]*$/,'');
+const keyOf=f=>(dirOf(f)+f.name.replace(/\.[^.]*$/,'')).toLowerCase();
+function addFiles(list){
+  batch++;
+  for(const f of list){
+    if(/\.txd$/i.test(f.name)){const k=keyOf(f);if(!txds.has(k))txds.set(k,[]);txds.get(k).push({f,b:batch})}
+    else if(/\.dff$/i.test(f.name))items.push({f,k:keyOf(f),b:batch,name:f.name.replace(/\.dff$/i,'')});
+  }
+  const c=items[cur];
+  items.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  cur=c?items.indexOf(c):-1;
+  $('#bl').textContent='Lista ('+items.length+')';
+  fillList();
+  if(!items.length)msg('No encontré archivos .dff en la selección.');
+  else if(cur<0)open(0);
+}
+async function open(i){
+  if(i<0||i>=items.length)return;
+  cur=i;const it=items[i],id=++seq;LOG.length=0;log('=== '+it.name+' ('+it.f.size+' bytes) '+(W2?'WebGL2':'WebGL1')+' ===');if(SHLOG)log('SHADER ERROR: '+SHLOG);$('#nm').textContent=it.name;msg('Cargando…');fillList();
+  try{
+    const geos=parseDFF(await it.f.arrayBuffer());
+    const cand=txds.get(it.k)||[],all=allTxds();
+    let tf=(cand.find(c=>c.b==it.b)||cand[cand.length-1]||{}).f||null;
+    if(!tf&&all.length==1)tf=all[0].f;
+    log(tf?'TXD emparejado: '+tf.name+' ('+tf.size+' bytes)':'TXD propio: no encontrado (TXD cargados: '+all.length+')');
+    const txd=tf?parseTXD(await tf.arrayBuffer()):{};
+    log('Texturas en el TXD: '+(Object.keys(txd).join(', ')||'ninguna'));
+    await fillShared(geos,txd,tf,it.b);
+    if(id!=seq)return;
+    buildSkel(geos);upload(geos,txd);
+    msg(tf?'':'Sin TXD: se muestra sin texturas');
+  }catch(e){if(id==seq){msg('Error con '+it.name+': '+e.message)}}
+}
+function fillList(){
+  const q=$('#q').value.toLowerCase(),ul=$('#ul');ul.textContent='';
+  let n=0;
+  items.forEach((it,i)=>{
+    if(n>=400||(q&&!it.name.toLowerCase().includes(q)))return;n++;
+    const li=document.createElement('li'),sp=document.createElement('span'),bt=document.createElement('button');
+    sp.textContent=it.name;bt.textContent='Quitar';if(i==cur)li.className='cur';
+    sp.onclick=()=>{$('#sheet').classList.remove('on');open(i)};
+    bt.onclick=e=>{e.stopPropagation();removeAt(i)};
+    li.append(sp,bt);ul.appendChild(li);
+  });
+}
+const idx=new Map();
+const allTxds=()=>[...txds.values()].flat();
+async function txdNames(f){
+  if(idx.has(f))return idx.get(f);
+  const dv=new DataView(await f.arrayBuffer()),r=chunks(dv,0,dv.byteLength).find(c=>c.type==0x16),n=new Set();
+  if(r)for(const c of chunks(dv,r.start,r.end).filter(c=>c.type==0x15)){const o=chunks(dv,c.start,c.end)[0].start;n.add(str(dv,o+8,o+40).toLowerCase())}
+  idx.set(f,n);return n;
+}
+async function fillShared(geos,txd,own,b){
+  const miss=new Set();
+  for(const g of geos)for(const m of g.mats)if(m.tex&&!txd[m.tex])miss.add(m.tex);
+  if(!miss.size)return;
+  log('Texturas que faltan en su TXD: '+[...miss].join(', '));
+  const list=allTxds().filter(c=>c.f!==own).sort((x,y)=>(y.b==b)-(x.b==b));
+  for(const {f} of list){
+    if(!miss.size)break;
+    try{
+      const nm=await txdNames(f),hit=[...miss].filter(n=>nm.has(n));
+      if(!hit.length)continue;
+      const t=parseTXD(await f.arrayBuffer(),new Set(hit));
+      for(const n of hit)if(t[n]){txd[n]=t[n];miss.delete(n)}
+      log('Tomadas de '+f.name+': '+hit.join(', '));
+    }catch(e){log('Error leyendo '+f.name+': '+e.message)}
+  }
+  if(miss.size)log('Siguen sin textura: '+[...miss].join(', '));
+}
+function clearAll(){items.length=0;txds.clear();cur=-1;seq++;free();$('#nm').textContent='';LOG.length=0;$('#lt').value='';msg('Lista vacía. Toca Archivos o Carpeta para cargar skins.');$('#bl').textContent='Lista (0)';fillList();draw()}
+function removeAt(i){
+  const was=i==cur;items.splice(i,1);
+  if(!items.length){clearAll();return}
+  if(was)open(Math.min(i,items.length-1));else if(i<cur)cur--;
+  $('#bl').textContent='Lista ('+items.length+')';fillList();
+}
+$('#qc').onclick=()=>{if(items.length&&confirm('¿Vaciar la lista?'))clearAll()};
+$('#q').oninput=fillList;
+$('#bl').onclick=()=>$('#sheet').classList.toggle('on');
+$('#pv').onclick=()=>open(cur-1);$('#nx').onclick=()=>open(cur+1);$('#bc').onclick=reset;
+$('#bf').onclick=()=>$('#fi').click();$('#bd').onclick=()=>window.AndroidBridge?AndroidBridge.pickFolder():$('#di').click();
+window.onNativeFolder=list=>{addFiles(list.map(o=>({name:o.name,size:o.size,webkitRelativePath:o.path,arrayBuffer:()=>fetch('/doc/'+o.id).then(r=>r.arrayBuffer())})))};
+for(const id of ['#fi','#di'])$(id).onchange=e=>{addFiles(e.target.files);e.target.value=''};
+function snapshot(){
+  if(!scene.length){msg('Carga un skin antes de hacer un render');return}
+  const dpr=devicePixelRatio||1;
+  RS=Math.min(2,4096/Math.max(cv.clientWidth*dpr,cv.clientHeight*dpr));TR=true;render();
+  const name=(items[cur]?items[cur].name:'skin')+'_render.png';
+  cv.toBlob(b=>{
+    if(!b){msg('No se pudo crear el render');return}
+    if(window.AndroidBridge){const fr=new FileReader();fr.onload=()=>{AndroidBridge.saveImage(String(fr.result).split(',')[1],name);msg('Render guardado en Imágenes/VisorSkins: '+name)};fr.readAsDataURL(b);return}
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    msg('Render guardado: '+name);
+  },'image/png');
+  RS=1;TR=false;render();
+}
+const ID=new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+let aimY=0,aimP=0,lastW=[],gPV=null,gR=null,weapon=[],wres=[],wtx=[],wbone=24,wstep=1,woff={x:0,y:0,z:0,rx:0,ry:0,rz:0},woffs={},wkey='base',wfile='',skel=null,anims=[],anim=null,playing=false,animT=0,last=0,rafT=0,CONJ=false;
+const bonesArr=new Float32Array(48*16);
+function ainv(m){
+  const a=m[0],b=m[4],c=m[8],d=m[1],e=m[5],f=m[9],g=m[2],h=m[6],i=m[10];
+  const r=[e*i-f*h,-(b*i-c*h),b*f-c*e, -(d*i-f*g),a*i-c*g,-(a*f-c*d), d*h-e*g,-(a*h-b*g),a*e-b*d];
+  const det=(a*r[0]+b*r[3]+c*r[6])||1e-9;for(let k=0;k<9;k++)r[k]/=det;
+  const x=m[12],y=m[13],z=m[14];
+  return new Float32Array([r[0],r[3],r[6],0,r[1],r[4],r[7],0,r[2],r[5],r[8],0,-(r[0]*x+r[1]*y+r[2]*z),-(r[3]*x+r[4]*y+r[5]*z),-(r[6]*x+r[7]*y+r[8]*z),1]);
+}
+function buildSkel(geos){
+  skel=null;const F=geos.frames||[],g=geos.find(x=>x.skin);
+  if(!g||!F.length){log('Esqueleto: este DFF no tiene skin o frames, no se puede animar');return}
+  const hf=F.find(f=>f.hier);
+  if(!hf){log('Esqueleto: no hay jerarquía HAnim');return}
+  const bones=hf.hier.map((id,i)=>({id,f:F.findIndex(f=>f.id==id),inv:g.skin.inv[i]||ID}));
+  const byF=new Map();bones.forEach((b,i)=>{if(b.f>=0)byF.set(b.f,i)});
+  bones.forEach(b=>{
+    b.wb=ainv(b.inv);let p=b.f>=0?F[b.f].par:-1,n=0;
+    while(p>=0&&!byF.has(p)&&n++<99)p=F[p].par;
+    b.par=p>=0?byF.get(p):-1;
+  });
+  bones.forEach(b=>{b.lb=b.par>=0?mul(bones[b.par].inv,b.wb):b.wb});
+  const W=[];F.forEach((f,i)=>{W[i]=f.par>=0&&W[f.par]?mul(W[f.par],f.m):f.m});
+  let dev=0,rot=0;
+  bones.forEach(b=>{
+    const m=b.inv,l=[0,4,8].map(k=>Math.hypot(m[k],m[k+1],m[k+2]));if(l.every(v=>v>.5&&v<1.5))rot++;
+    if(b.f<0)return;const M=mul(W[b.f],m);for(let k=0;k<16;k++)dev=Math.max(dev,Math.abs(M[k]-ID[k]));
+  });
+  log('Esqueleto: '+bones.length+' huesos ('+bones.filter(b=>b.f<0).length+' sin frame), raíces='+bones.filter(b=>b.par<0).length+', matrices con rotación válida='+rot+'/'+bones.length+', desvío frames/inversas='+dev.toFixed(3)+' (informativo)');
+  if(bones.length>48)log('AVISO: '+bones.length+' huesos, el visor soporta 48');
+  log('Huesos: '+bones.map((b,i)=>i+':'+(F[b.f]?F[b.f].name:'?')+'(p'+b.par+')').join(' '));
+  log('Skin PLG: tamaño='+g.skin.size+' esperado='+g.skin.exp+' hueso0/1='+JSON.stringify(g.skin.raw));
+  const rb=bones.find(b=>b.par<0),vroot=!!rb&&Math.acos(Math.max(-1,Math.min(1,((-rb.wb[4]+rb.wb[1]+rb.wb[10])-1)/2)))<.35;
+  log('Raíz estándar de GTA: '+(vroot?'sí (se usa la rotación del IFP)':'no (se conserva su rotación base)'));
+  skel={F,bones,ok:rot>=bones.length*.9,vroot};
+  if(!skel.ok)log('AVISO: las matrices del skin no se leen bien; se desactiva la animación para no perder el modelo');
+}
+function trackMat(tr,t,bind,keep){
+  const T=tr.t,n=T.length;let lo=0,hi=n-1;
+  while(lo<hi){const m=(lo+hi+1)>>1;if(T[m]<=t)lo=m;else hi=m-1}
+  const i=lo,j=Math.min(i+1,n-1),sp=T[j]-T[i],f=sp>0?(t-T[i])/sp:0,Q=tr.q;
+  const sg=Q[i*4]*Q[j*4]+Q[i*4+1]*Q[j*4+1]+Q[i*4+2]*Q[j*4+2]+Q[i*4+3]*Q[j*4+3]<0?-1:1;
+  const ax=Q[i*4],ay=Q[i*4+1],az=Q[i*4+2],aw=Q[i*4+3],bx=sg*Q[j*4],by=sg*Q[j*4+1],bz=sg*Q[j*4+2],bw=sg*Q[j*4+3];
+  const cs=ax*bx+ay*by+az*bz+aw*bw;let k0=1-f,k1=f;
+  if(cs<.9995){const om=Math.acos(Math.min(1,cs)),so=Math.sin(om);k0=Math.sin((1-f)*om)/so;k1=Math.sin(f*om)/so}
+  let x=k0*ax+k1*bx,y=k0*ay+k1*by,z=k0*az+k1*bz,w=k0*aw+k1*bw;
+  const l=Math.hypot(x,y,z,w)||1;x/=l;y/=l;z/=l;w/=l;
+  if(CONJ){x=-x;y=-y;z=-z}
+  let px=bind[12],py=bind[13],pz=bind[14];const P=tr.p;
+  if(P){px=P[i*3]+(P[j*3]-P[i*3])*f;py=P[i*3+1]+(P[j*3+1]-P[i*3+1])*f;pz=P[i*3+2]+(P[j*3+2]-P[i*3+2])*f}
+  if(keep)return new Float32Array([bind[0],bind[1],bind[2],0,bind[4],bind[5],bind[6],0,bind[8],bind[9],bind[10],0,px,py,pz,1]);
+  return new Float32Array([1-2*(y*y+z*z),2*(x*y+z*w),2*(x*z-y*w),0, 2*(x*y-z*w),1-2*(x*x+z*z),2*(y*z+x*w),0, 2*(x*z+y*w),2*(y*z-x*w),1-2*(x*x+y*y),0, px,py,pz,1]);
+}
+function pose(){
+  const B=skel.bones,W=[],tt=anim.dur>0?animT%anim.dur:0;
+  const ev=i=>{
+    if(W[i])return W[i];
+    const b=B[i],tr=anim.tracks.get(b.id),L=tr?trackMat(tr,tt,b.lb,b.par<0&&!skel.vroot):b.lb;
+    let w=b.par>=0&&b.par!==i?mul(ev(b.par),L):L;
+    if(b.id==3&&(aimY||aimP)){const d=Math.PI/180,px=w[12],py=w[13],pz=w[14];w=mul(T(px,py,pz),mul(Rz(aimY*d),mul(Rx(aimP*d),mul(T(-px,-py,-pz),w))))}
+    return W[i]=w;
+  };
+  B.forEach((b,i)=>{if(i<48)bonesArr.set(mul(ev(i),b.inv),i*16)});
+  lastW=W;
+}
+function tick(now){
+  if(!playing)return;
+  animT+=(now-last)/1000;last=now;render();rafT=requestAnimationFrame(tick);
+}
+function play(){cancelAnimationFrame(rafT);last=performance.now();rafT=requestAnimationFrame(tick)}
+function fillAnims(){
+  const ul=$('#al');ul.textContent='';
+  const add=(txt,i,on)=>{const li=document.createElement('li');li.textContent=txt;if(on)li.className='cur';li.onclick=()=>pick(i);ul.appendChild(li)};
+  add('Pose base (sin animación)',-1,!anim);
+  anims.forEach((a,i)=>add(a.name+'  ('+a.dur.toFixed(1)+' s)',i,a==anim));
+}
+function pick(i){
+  swapW(i<0?'base':anims[i].name);
+  anim=i<0?null:anims[i];animT=0;playing=!!anim;$('#ap').textContent='Pausar';$('#bz').style.display=anim?'':'none';
+  if(playing)play();
+  fillAnims();draw();
+  log('Animación: '+(anim?anim.name+' ('+anim.dur.toFixed(2)+' s, '+anim.tracks.size+' huesos)':'pose base'));
+  if(anim&&!skel)msg('Este skin no tiene esqueleto: la animación no se verá');
+  else if(anim&&!skel.ok)msg('No pude leer los huesos de este skin: no se puede animar');
+}
+$('#bi').onclick=()=>$('#wpn').classList.remove('on')||anims.length?$('#anp').classList.toggle('on'):$('#ii').click();
+$('#ao').onclick=()=>$('#ii').click();
+$('#bz').onclick=()=>pick(-1);
+$('#ax').onclick=()=>$('#anp').classList.remove('on');
+$('#ap').onclick=()=>{if(!anim)return;playing=!playing;$('#ap').textContent=playing?'Pausar':'Reproducir';if(playing)play()};
+$('#ac').onclick=()=>{CONJ=!CONJ;$('#ac').textContent='Giro: '+(CONJ?'invertido':'normal');draw()};
+$('#ii').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    anims=parseIFP(await f.arrayBuffer());anim=null;playing=false;animT=0;
+    $('#bi').textContent='Anim';fillAnims();$('#anp').classList.add('on');
+    msg(f.name+': '+anims.length+' animaciones');log('IFP '+f.name+': '+anims.length+' animaciones');draw();
+  }catch(err){msg('Error al leer el IFP: '+err.message);log('IFP ERROR: '+err.message)}
+};
+
+function drawWeapon(){
+  if(!weapon.length||!skel||!gPV)return;
+  const H=handMat();if(!H)return;
+  const d=Math.PI/180,O=mul(T(woff.x,woff.y,woff.z),mul(Rx(woff.rx*d),mul(Ry(woff.ry*d),Rz(woff.rz*d)))),MW=mul(H,O);
+  gl.uniform1f(U('sk'),0);gl.disableVertexAttribArray(3);gl.disableVertexAttribArray(4);
+  for(const o of weapon){
+    const M=mul(MW,o.fm),RR=mul(gR,M);
+    gl.uniformMatrix4fv(U('mvp'),false,mul(gPV,M));
+    gl.uniformMatrix3fv(U('nm'),false,new Float32Array([RR[0],RR[1],RR[2],RR[4],RR[5],RR[6],RR[8],RR[9],RR[10]]));
+    gl.bindBuffer(gl.ARRAY_BUFFER,o.pb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,o.nb);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,o.tb);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,2,gl.FLOAT,false,0,0);
+    for(const p of o.parts){
+      gl.uniform4fv(U('col'),p.col);gl.uniform1f(U('ht'),p.tex?1:0);
+      if(p.tex)gl.bindTexture(gl.TEXTURE_2D,p.tex);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,p.ib);gl.drawElements(gl.TRIANGLES,p.n,o.big?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,0);
+    }
+  }
+}
+function render(){renderScene();drawWeapon()}
+function handMat(){
+  if(!skel)return null;
+  const i=skel.bones.findIndex(b=>b.id==wbone);if(i<0)return null;
+  return(anim&&skel.ok&&lastW[i])?lastW[i]:skel.bones[i].wb;
+}
+function freeW(){wres.forEach(b=>gl.deleteBuffer(b));wtx.forEach(t=>gl.deleteTexture(t));weapon=[];wres=[];wtx=[]}
+function uploadWeapon(geos,txd){
+  freeW();
+  for(const g of geos){
+    const mk=(t,d)=>{const b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,d,gl.STATIC_DRAW);wres.push(b);return b};
+    const big=g.nv>65535&&u32,o={pb:mk(gl.ARRAY_BUFFER,g.pos),nb:mk(gl.ARRAY_BUFFER,g.nrm),tb:mk(gl.ARRAY_BUFFER,g.uv),parts:[],big,fm:g.fm||ID};
+    for(const [m,idx] of g.groups){
+      const mat=g.mats[m]||{},t=mat.tex&&txd[mat.tex];
+      log('  arma mat '+m+' tex='+(mat.tex||'ninguna')+(mat.tex&&!t?' NO ESTA EN EL TXD':'')+' tris='+idx.length/3);
+      o.parts.push({ib:mk(gl.ELEMENT_ARRAY_BUFFER,big?new Uint32Array(idx):new Uint16Array(idx)),n:idx.length,col:mat.col||[1,1,1,1],tex:t?mkTex(t,wtx):null});
+    }
+    weapon.push(o);
+  }
+}
+const WP=[['X','x',.01],['Y','y',.01],['Z','z',.01],['Giro X','rx',5],['Giro Y','ry',5],['Giro Z','rz',5]];
+function saveW(){try{localStorage.setItem('woffs:'+wfile,JSON.stringify(woffs))}catch(e){}}
+function swapW(k){woffs[wkey]=woff;woff=woffs[k]||Object.assign({},woff);woffs[k]=woff;wkey=k;fillW();saveW()}
+function fillW(){
+  const g=$('#wg');g.textContent='';
+  const h=document.createElement('div');h.textContent='Ajuste para: '+wkey+' (se guarda por animación)';g.appendChild(h);
+  for(const [lb,k,st] of WP){
+    const r=document.createElement('div'),sp=document.createElement('span'),v=document.createElement('b'),m=document.createElement('button'),pl=document.createElement('button');
+    sp.textContent=lb;m.textContent='−';pl.textContent='+';
+    const upd=()=>{v.textContent=woff[k].toFixed(k[0]=='r'?0:2)};upd();
+    m.onclick=()=>{woff[k]=+(woff[k]-st*wstep).toFixed(3);upd();saveW();draw()};
+    pl.onclick=()=>{woff[k]=+(woff[k]+st*wstep).toFixed(3);upd();saveW();draw()};
+    r.append(sp,m,v,pl);g.appendChild(r);
+  }
+}
+$('#bt').onclick=()=>{const m=$('#fm');m.classList.toggle('on');$('#bt').textContent=m.classList.contains('on')?'Cerrar menú':'Menú'};
+$('#fm').addEventListener('click',e=>{if(e.target.tagName=='BUTTON'&&e.target.id!='bf2'){$('#fm').classList.remove('on');$('#bt').textContent='Menú'}});
+$('#bf2').onclick=()=>{RGRIS=!RGRIS;$('#bf2').textContent='Fondo render: '+(RGRIS?'#383838':'transparente')};
+$('#ay').oninput=e=>{aimY=+e.target.value;draw()};
+$('#ap2').oninput=e=>{aimP=+e.target.value;draw()};
+$('#bw').onclick=()=>{
+  if(!weapon.length){$('#wi').click();return}
+  $('#anp').classList.remove('on');$('#wpn').classList.toggle('on');
+};
+$('#wo').onclick=()=>$('#wi').click();
+$('#wx').onclick=()=>$('#wpn').classList.remove('on');
+$('#wq').onclick=()=>{freeW();$('#wpn').classList.remove('on');msg('Arma quitada');draw()};
+$('#wr').onclick=()=>{Object.assign(woff,{x:0,y:0,z:0,rx:0,ry:0,rz:0});fillW();saveW();draw()};
+$('#wb').onclick=()=>{wbone=wbone==24?34:24;$('#wb').textContent='Mano: '+(wbone==24?'der':'izq');draw()};
+$('#wp').onclick=()=>{wstep=wstep==1?5:1;$('#wp').textContent='Paso x'+wstep};
+$('#wi').onchange=async e=>{
+  const fs=[...e.target.files];e.target.value='';
+  const df=fs.find(f=>/\.dff$/i.test(f.name)),tf=fs.find(f=>/\.txd$/i.test(f.name));
+  if(!df){msg('Elige el .dff del arma junto con su .txd');return}
+  try{
+    log('--- ARMA '+df.name+' ---');
+    const geos=parseDFF(await df.arrayBuffer()),txd=tf?parseTXD(await tf.arrayBuffer()):{};
+    await fillShared(geos,txd,tf,-1);
+    const F=geos.frames||[],W=[];F.forEach((f,i)=>{W[i]=f.par>=0&&W[f.par]?mul(W[f.par],f.m):f.m});
+    (geos.atomics||[]).forEach(a=>{if(geos[a.g]&&W[a.f])geos[a.g].fm=W[a.f]});
+    wfile=df.name;wkey=anim?anim.name:'base';
+    try{woffs=JSON.parse(localStorage.getItem('woffs:'+wfile)||'{}')}catch(e){woffs={}}
+    woff=woffs[wkey]||{x:0,y:0,z:0,rx:0,ry:0,rz:0};woffs[wkey]=woff;
+    uploadWeapon(geos,txd);fillW();
+    log('Arma: '+geos.length+' geometrías, '+geos.reduce((n,g)=>n+g.nv,0)+' vértices, TXD='+(tf?tf.name:'ninguno'));
+    msg(skel?df.name+' cargada. Ajusta posición y giro en el panel Arma':'Carga un skin con esqueleto para ver el arma');
+    $('#anp').classList.remove('on');$('#wpn').classList.add('on');draw();
+  }catch(err){msg('Error con el arma: '+err.message);log('ARMA ERROR: '+err.message)}
+};
+$('#br').onclick=snapshot;
+$('#bg').onclick=()=>$('#logp').classList.add('on');$('#lx').onclick=()=>$('#logp').classList.remove('on');
+$('#lc').onclick=()=>{const t=$('#lt');t.focus();t.select();document.execCommand('copy');$('#lc').textContent='Copiado';setTimeout(()=>$('#lc').textContent='Copiar',1500)};
+render();
+</script></body></html>
